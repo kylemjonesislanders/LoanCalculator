@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>Loan Calculator</title>
+<style>
+body { font: 12px Arial;}
+
+path { 
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+h1{
+ 	position: absolute;
+ 	left: 20px;
+	top: 0px;
+}
+
+h2{
+ 	position: absolute;
+ 	left: 20px;
+	top: 50px;
+	font: 18px Arial;
+}
+
+h3{
+ 	position: absolute;
+ 	left: 20px;
+	top: 80px;
+	font: 18px Arial;
+	text-decoration: underline;
+}
+
+h4{
+ 	position: absolute;
+ 	left: 150px;
+	top: 76px;
+	font: 18px Arial;
+}
+
+</style>
+
+<body>
+  <div>
+  <h1>Loan Calculator</h1>
+  <h2>
+    Principal:
+    <input id="principalButton" name="lines" value="90000" size="8"></input>
+    Yearly Interest Rate (%):
+    <input id="interestButton" name="points" value="5.375" size="8"></input>
+	Monthly Payment:
+    <input id="paymentButton" name="points" value="1500" size="8"></input>
+	<button onclick="render()">Submit</button>
+  </h2>
+  <h3>
+  Time to pay off:
+  </h3>
+  <h4 id = "p1">
+  </h4>
+  </div>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
+<script>
+
+// Initialize Dimensions for canvas
+var margin = {top: 200, right: 20, bottom: 40, left: 75},
+    width = 800 - margin.left - margin.right,
+    height = 800 - margin.top - margin.bottom;
+
+// Set the ranges
+var x = d3.scale.linear().range([0, width]);
+var y = d3.scale.linear().range([height, 0]);
+
+// Define the axes
+var xAxis = d3.svg.axis().scale(x)
+              .orient("bottom").ticks(10);
+	
+var yAxis = d3.svg.axis().scale(y)
+              .orient("left").ticks(10);
+			  
+// Define the line
+var valueline = d3.svg.line()
+                  .x(function(d) { return x(d.year); })
+                  .y(function(d) { return y(d.principal); });
+ 
+// Adds the svg canvas
+var chart1 = d3.select("body")
+            .append("svg")
+            .attr("width", width + margin.left + margin.right)
+            .attr("height", height + margin.top + margin.bottom)
+            .append("g")
+            .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+			
+// Create Initial Plot
+var data = [
+			{year: 0, principal: 50000},
+			{year: 1, principal: 45000}
+			];
+
+// Scale the range of the data
+x.domain([d3.min(data, function(d) { return d.year; }), d3.max(data, function(d) { return d.year; })]);
+y.domain([d3.min(data, function(d) { return d.principal; }), d3.max(data, function(d) { return d.principal; })]);
+
+// Add the valueline path.
+chart1.append("path")
+   .attr("class", "line")
+   .attr("d", valueline(data));
+
+// Add the X Axis
+chart1.append("g")
+   .attr("class", "x axis")
+   .attr("transform", "translate(0," + height + ")")
+   .call(xAxis);
+   
+// Text label for the x axis
+chart1.append("text")             
+   .attr("y", height + margin.bottom)
+   .attr("x", (width)/2)
+   .style("text-anchor", "middle")
+   .style("font-size", "16px") 
+   .text("Year");
+
+// Add the Y Axis
+chart1.append("g")
+   .attr("class", "y axis")
+   .call(yAxis);
+   
+// Text label for the y axis
+chart1.append("text")
+   .attr("transform", "rotate(-90)")
+   .attr("y", 0 - margin.left)
+   .attr("x",0 - (height / 2))
+   .attr("dy", "1em")
+   .style("text-anchor", "middle")
+   .style("font-size", "16px") 
+   .text("Principal");
+   
+// Add Title
+chart1.append("text")
+      .attr("x", (width / 2))             
+      .attr("y", 0 - (margin.top / 8))
+      .attr("text-anchor", "middle")  
+      .style("font-size", "16px") 
+      .style("text-decoration", "underline")  
+      .text("Plot of Principal over Time");
+	  
+// Add Bar Plot
+var	chart2 = d3.select("body")
+	           .append("svg")
+		       .attr("width", width + margin.left + margin.right + 100)
+		       .attr("height", height + margin.top + margin.bottom)
+	           .append("g")
+		       .attr("transform", "translate(" + (margin.left+30) + "," + (margin.top+30) + ")");
+
+// Initial Data for barplot
+var data2 = [0, 0, 0];
+
+// Create Bars	
+chart2.selectAll('rect')
+      .data(data2).enter()
+      .append('rect')
+      .attr('x', [0,0,0])
+      .attr('y', function(d,i) {return i * 180})
+      .attr('width', function(d) {return d})
+      .attr('height', 150)
+
+// Add text to bars	  
+chart2.selectAll("text")
+      .data(data2).enter()
+      .append("text")
+      .text(function(d) {return d})
+      .attr("y", function(d,i) {return i*180+75})
+      .attr("x", function(d) {return d+5}) 
+
+// Add labels to bars	  
+chart2.append("text")
+      .attr("x", -50)             
+      .attr("y", 75)
+      .attr("text-anchor", "middle")  
+      .style("font-size", "16px") 
+      .text("Interest:") 
+	  
+chart2.append("text")
+      .attr("x", -50)             
+      .attr("y", 255)
+      .attr("text-anchor", "middle")  
+      .style("font-size", "16px") 
+      .text("Principal:")
+	  
+chart2.append("text")
+      .attr("x", -50)             
+      .attr("y", 437)
+      .attr("text-anchor", "middle")  
+      .style("font-size", "16px") 
+      .text("Total:")
+	  
+// Add Title
+chart2.append("text")
+      .attr("x", (width / 2))             
+      .attr("y", 0 - (margin.top / 3.8))
+      .attr("text-anchor", "middle")  
+      .style("font-size", "16px") 
+      .style("text-decoration", "underline")  
+      .text("Expense Breakdown");
+
+// Update data based on user input
+function render(){
+
+	// Define values for variables
+	var principal = +document.getElementById("principalButton").value;
+	var interest_rate_yearly = +document.getElementById("interestButton").value/100;
+	var payment = +document.getElementById("paymentButton").value;
+	var interest_rate_monthly = interest_rate_yearly/12;
+
+	// Set up data
+	var data = [];
+	var total_interest = 0;
+	data[0] = {year: 0, principal: principal};
+	for (var i=1; principal > 0; i++) {
+		var interest = principal*interest_rate_monthly;
+		if (payment <= interest) {
+			break;
+		}
+		data[i] = {
+			year: i/12,
+			principal: (principal+interest) - payment,
+			interest: interest
+		};
+		principal = (principal+interest) - payment;
+		total_interest = total_interest + data[i].interest
+	}
+
+	// Scale the range of the data again
+	x.domain([d3.min(data, function(d) { return d.year; }), d3.max(data, function(d) { return d.year; })]);
+	y.domain([d3.min(data, function(d) { return d.principal; }), d3.max(data, function(d) { return d.principal; })]);
+
+	// Change the Line
+	chart1.transition()
+	      .select(".line") 
+          .duration(750)
+          .attr("d", valueline(data));
+
+	// Change the x axis values
+	chart1.transition()
+	      .select(".x.axis")
+	      .duration(750)
+          .call(xAxis);
+ 
+    // Change the y axis values        
+    chart1.transition()
+	      .select(".y.axis") 
+          .duration(750)
+          .call(yAxis);
+	   
+	// Update Text
+	if (payment <= interest) {
+		d3.select("#p1")
+          .text("You will never pay off the loan with that payment value. Increase the payment!");
+		var data2 = [0, 0, 0];
+	} else {
+	    var years = Math.round(d3.max(data, function(d) { return d.year; })*100)/100
+	    d3.select("#p1")
+          .text(years + " years");
+		var temp = +document.getElementById("principalButton").value;
+	
+		var data2 = [Math.round(total_interest*100)/100, Math.round(temp*100)/100,Math.round((total_interest+temp)*100)/100];
+		
+	}		
+	
+	// Update 2nd Chart
+	var scale = d3.scale.linear()
+                  .domain([0, d3.max(data2)])
+                  .range([0, width])
+				  
+	chart2.selectAll("rect")
+		  .data(data2)
+		  .transition()      // Just this single magical line
+		  .attr('width', function(d) {return scale(d)})
+		  
+	chart2.selectAll("text")
+		  .data(data2)
+	      .transition() 
+		  .text(function(d) {return "$" + d.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")})
+	      .attr("x", function(d) {return scale(d)+5}) 
+		  .attr("y", function(d,i) {return i*180+75})	
+}
+
+// Initial page render
+render();
+
+</script>
+</body>
+</html>
