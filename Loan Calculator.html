@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<meta charset="utf-8">
+<title>Loan Calculator</title>
+<style>
+
+h4{ 
+	font: 20px Arial;
+	font-weight: bold;
+}
+
+path { 
+    stroke: steelblue;
+    stroke-width: 2;
+    fill: none;
+}
+
+.axis path,
+.axis line {
+    fill: none;
+    stroke: grey;
+    stroke-width: 1;
+    shape-rendering: crispEdges;
+}
+
+#tooltip {
+    position: absolute;
+    width: 200px;
+    height: auto;
+    padding: 10px;
+    background-color: white;
+    -webkit-border-radius: 10px;
+    -moz-border-radius: 10px;
+    border-radius: 10px;
+    -webkit-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+    -moz-box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+    box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.4);
+    pointer-events: none;
+}
+
+#tooltip.hidden {
+    display: none;
+}
+
+#tooltip p {
+    margin: 0;
+    font-family: sans-serif;
+    font-size: 16px;
+    line-height: 20px;
+}
+
+h3{
+ 	position: absolute;
+ 	left: 10px;
+	top: 105px;
+	font: 18px Arial;
+	text-decoration: underline;
+}
+
+h4{
+ 	position: absolute;
+ 	left: 140px;
+	top: 100px;
+	font: 18px Arial;
+}
+
+</style>
+
+<body>
+  <div>
+  <h1>Loan Calculator</h1>
+  <h2>
+    Principal:
+    <input id="principalButton" name="lines" value="90000" size="8"></input>
+    Yearly Interest Rate (%):
+    <input id="interestButton" name="points" value="5.375" size="8"></input>
+	Monthly Payment:
+    <input id="paymentButton" name="points" value="1500" size="8"></input>
+	<button onclick="render()">Submit</button>
+  </h2>
+  <h3>
+  Time to pay off:
+  </h3>
+  <h4 id = "p1">
+  </h4>
+  </div>
+  <div id="container" class="svg-container"></div>
+  <div id="tooltip" class="hidden">
+    <p><strong>Loan Summary</strong></p>
+    <p><span id="value1"></p>
+	<p><span id="value2"></p>
+	<p><span id="value3"></p>
+	<p><span id="value4"></p>
+</div>
+<script src="https://d3js.org/d3.v3.min.js"></script>
+
+<script>
+
+// Initialize Dimensions for canvas
+const width = 900;
+const height = 300;
+const margin = 0;
+const padding = 0;
+const adj = 15;
+
+// Set the ranges
+var x = d3.scale.linear().range([0, width]);
+var y = d3.scale.linear().range([height, 0]);
+
+// Define the axes
+var xAxis = d3.svg.axis().scale(x)
+              .orient("bottom").ticks(10);
+	
+var yAxis = d3.svg.axis().scale(y)
+              .orient("left").ticks(10);
+			  
+// Define the line
+var valueline = d3.svg.line()
+                  .x(function(d) { return x(d.year); })
+                  .y(function(d) { return y(d.principal); });
+ 
+// Adds the svg canvas
+var chart1 = d3.select("div#container")
+              .append("svg")
+              .attr("preserveAspectRatio", "xMinYMin meet")
+              .attr("viewBox", "-"
+                + adj*5 + " -"
+                + adj*2 + " "
+                + (width + adj *10) + " "
+                + (height + adj*5))
+              .style("padding", padding)
+              .style("margin", margin)
+              .classed("svg-content", true);
+			
+// Create Initial Plot
+var data = [
+			{year: 0, principal: 50000},
+			{year: 1, principal: 45000}
+			];
+
+// Scale the range of the data
+x.domain([d3.min(data, function(d) { return d.year; }), d3.max(data, function(d) { return d.year; })]);
+y.domain([d3.min(data, function(d) { return d.principal; }), d3.max(data, function(d) { return d.principal; })]);
+
+// Add the valueline path.
+chart1.append("path")
+      .attr("class", "line")
+      .attr("d", valueline(data));
+
+// Add the X Axis
+chart1.append("g")
+   .attr("class", "x axis")
+   .attr("transform", "translate(0," + height + ")")
+   .call(xAxis);
+   
+// Text label for the x axis
+chart1.append("text")             
+    .attr("transform", "translate(" + (width/2) + " ," + (height+adj*2.5) + ")")
+    .style("text-anchor", "middle")
+	.attr("font-weight", "bold")
+    .text("Year");
+
+// Add the Y Axis
+chart1.append("g")
+   .attr("class", "y axis")
+   .call(yAxis);
+   
+// Text label for the y axis
+chart1.append("text")
+   .attr("transform", "rotate(-90)")
+   .attr("y", 0 - adj*5.25)
+   .attr("x",0 - (height / 2))
+   .attr("dy", "1em")
+   .style("text-anchor", "middle")
+   .style("font-size", "16px") 
+   .attr("font-weight", "bold")
+   .text("Principal");
+   
+// Add Title
+chart1.append("text")
+      .attr("x", (width / 2))             
+      .attr("y", 0 - (margin.top / 8))
+      .attr("text-anchor", "middle")  
+      .style("font-size", "16px") 
+      .style("text-decoration", "underline")  
+      .text("Plot of Principal over Time");
+
+// Update data based on user input
+function render(){
+
+	// Define values for variables
+	var principal = +document.getElementById("principalButton").value;
+	var interest_rate_yearly = +document.getElementById("interestButton").value/100;
+	var payment = +document.getElementById("paymentButton").value;
+	var interest_rate_monthly = interest_rate_yearly/12;
+
+	// Set up data
+	var data = [];
+	var total_interest = 0;
+	var total = 0;
+	data[0] = {year: 0, principal: principal, total: 0, total_interest:0};
+	for (var i=1; principal > 0; i++) {
+		var interest = principal*interest_rate_monthly;
+		total_interest = total_interest + interest;
+		if (payment <= interest) {
+			break;
+		}
+		data[i] = {
+			year: i/12,
+			principal: (principal+interest) - payment,
+			interest: interest,
+			total_interest: total_interest,
+			total: total + payment
+		};
+		principal = (principal+interest) - payment;
+		total = total + payment;
+	}
+
+	// Scale the range of the data again
+	x.domain([d3.min(data, function(d) { return d.year; }), d3.max(data, function(d) { return d.year; })]);
+	y.domain([d3.min(data, function(d) { return d.principal; }), d3.max(data, function(d) { return d.principal; })]);
+
+	// Change the Line
+	chart1.transition()
+	      .select(".line") 
+          .duration(750)
+          .attr("d", valueline(data));
+
+	// Change the x axis values
+	chart1.transition()
+	      .select(".x.axis")
+	      .duration(750)
+          .call(xAxis);
+ 
+    // Change the y axis values        
+    chart1.transition()
+	      .select(".y.axis") 
+          .duration(750)
+          .call(yAxis);
+		  
+	// Add Circles
+	chart1.selectAll("circle").remove();
+	chart1.selectAll("circle")
+	     .data(data)
+	     .enter()
+	     .append('circle')
+	     .attr("cx", function(d) { return x(d.year) })
+         .attr("cy", function(d) { return y(d.principal) })
+         .attr("r", 3)
+		 .on("mouseover", function(d) {
+		        // Increase Size of Dots
+				d3.select(this)
+				  .attr("r", 8);
+				  
+				// Update Tooltip
+				var xPosition = d3.event.x-(adj*6);
+				var yPosition = d3.event.y-(adj*10);
+				var principal_update = Math.round(d.principal*100)/100;
+				var interest_update = Math.round(d.total_interest*100)/100;
+				var total_update = Math.round(d.total*100)/100;
+				
+				d3.select("#tooltip")
+				  .style("left", xPosition + "px")
+				  .style("top", yPosition + "px")
+				  .select("#value1")
+				  .text("Year: " + Math.round(d.year*100)/100);
+				
+				d3.select("#tooltip")
+				  .style("left", xPosition + "px")
+				  .style("top", yPosition + "px")
+				  .select("#value2")
+				  .text("Principal: $" + principal_update.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+				  
+				d3.select("#tooltip")
+				  .style("left", xPosition + "px")
+				  .style("top", yPosition + "px")
+				  .select("#value3")
+				  .text("Interest Paid: $" + interest_update.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+				  
+				d3.select("#tooltip")
+				  .style("left", xPosition + "px")
+				  .style("top", yPosition + "px")
+				  .select("#value4")
+				  .text("Total Paid: $" + total_update.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","));
+				
+				
+				d3.select("#tooltip").classed("hidden", false);
+			})
+		.on("mouseout", function(d) {
+				// Set Size of dots back to normal
+                d3.select(this)
+				  .attr("r", 3);
+				  
+				// Hide Tip
+				d3.select("#tooltip").classed("hidden", true);
+			});
+	   
+	// Update Text
+	if (payment <= interest) {
+		d3.select("#p1")
+          .text("You will never pay off the loan with that payment value. Increase the payment!")
+		  .style("font-size", 20);
+	} else {
+	    var years = Math.round(d3.max(data, function(d) { return d.year; })*100)/100
+		
+	    d3.select("#p1")
+          .text(years + " years")
+		  .style("font-size", 20);	
+	}		
+}
+
+// Initial page render
+render();
+
+</script>
+</body>
+</html>
